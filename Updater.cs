@@ -1,7 +1,6 @@
 ﻿using ObjectStoreE;
 using System.IO.Compression;
 using System.Net.NetworkInformation;
-using System.Reflection;
 
 namespace Supdate
 {
@@ -22,99 +21,120 @@ namespace Supdate
             PackageInvalid,
             InstallFailed
         }
+
         public static UpdateEndCode CheckUpdate(IPackage oldIPackage, string oldIPackageLocation)
 
         {
-
-
-            if (oldIPackage.CurrentVersion.AlwaysUpdate)
+            try
             {
-                return Update(oldIPackage, oldIPackageLocation);
-            }
 
-            if (!PingHost(oldIPackage.LatestVersionDownload))
+                if (oldIPackage.CurrentVersion.AlwaysUpdate)
+                {
+                    return Update(oldIPackage, oldIPackageLocation);
+                }
+
+                if (!PingHost(oldIPackage.LatestVersionDownload))
+                {
+                    ConsoleLog.Error("IPackage server or client is offline.");
+                    return UpdateEndCode.ClientOrServerOffline;
+                }
+                if (!PingHost(oldIPackage.LatestPackageDownload))
+                {
+                    ConsoleLog.Error("IPackage server or client is offline.");
+                    return UpdateEndCode.ClientOrServerOffline;
+                }
+
+                HttpClient httpClient = new();
+
+
+
+                var latestVersionString = httpClient.GetStringAsync(oldIPackage.LatestVersionDownload).Result;
+                if (latestVersionString == null)
+                {
+                    ConsoleLog.Warn("The latest version returned null - assuming there's an update");
+                    return Update(oldIPackage, oldIPackageLocation);
+                }
+                Version latestVersion = new(latestVersionString);
+                if ((latestVersion > oldIPackage.CurrentVersion) ?? true)
+                {
+                    return Update(oldIPackage, oldIPackageLocation);
+                }
+                if ((latestVersion < oldIPackage.CurrentVersion) ?? throw new Exception("Always update check has alreay been done"))
+                {
+                    ConsoleLog.Warn("Current version is newer than latest oldIPackage. If this is a dev version, that's ok.");
+                }
+                return UpdateEndCode.ClientOnLatestVersion;
+            }
+            catch (DoFuncException ex)
             {
-                ConsoleLog.Error("IPackage server or client is offline.");
-                return UpdateEndCode.ClientOrServerOffline;
+                ex.action.Invoke();
+                return UpdateEndCode.ClientOnLatestVersion;
             }
-            if (!PingHost(oldIPackage.LatestPackageDownload))
-            {
-                ConsoleLog.Error("IPackage server or client is offline.");
-                return UpdateEndCode.ClientOrServerOffline;
-            }
-
-            HttpClient httpClient = new();
-
-
-
-            var latestVersionString = httpClient.GetStringAsync(oldIPackage.LatestVersionDownload).Result;
-            if (latestVersionString == null)
-            {
-                ConsoleLog.Warn("The latest version returned null - assuming there's an update");
-                return Update(oldIPackage, oldIPackageLocation);
-            }
-            Version latestVersion = new(latestVersionString);
-            if ((latestVersion > oldIPackage.CurrentVersion) ?? true)
-            {
-                return Update(oldIPackage, oldIPackageLocation);
-            }
-            if ((latestVersion < oldIPackage.CurrentVersion) ?? throw new Exception("Always update check has alreay been done"))
-            {
-                ConsoleLog.Warn("Current version is newer than latest oldIPackage. If this is a dev version, that's ok.");
-            }
-            return UpdateEndCode.ClientOnLatestVersion;
-
 
         }
 
+        public static string CreateTempDir()
+        {
+            string randomPath;
+            do
+            {
+                randomPath = Path.Combine(Path.GetTempPath(), Random.Shared.NextInt64().ToString());
+            } while (Directory.Exists(randomPath));
+            Directory.CreateDirectory(randomPath);
+            return randomPath;
+        }
         public static UpdateEndCode Update(IPackage oldIPackage, string oldPackageLocation, HttpClient httpClient = null)
         {
+            List<string> tempfileDelete = new();
             if (httpClient == null)
                 httpClient = new();
 
-            string extractDir = Path.GetTempPath();
+            string extractDir = CreateTempDir();
 
 
 
-            string? newIPackagePath = Path.GetTempPath();
+            string? newIPackagePath = CreateTempDir();
             try
             {
-                ConsoleLog.Log("Downloading oldIPackage");
+                ConsoleLog.Log("Downloading latest package");
                 byte[] latestPackageBinary = httpClient.GetByteArrayAsync(oldIPackage.LatestPackageDownload).Result;
                 //There are no methods for extracting from a byte array directly
-                ConsoleLog.Log("Extracting oldIPackage");
+                ConsoleLog.Log("Extracting latest package");
                 File.WriteAllBytes(Path.Combine(extractDir, "Package.zip"), latestPackageBinary);
                 Directory.CreateDirectory(Path.Combine(extractDir, "Package"));
                 ZipFile.ExtractToDirectory(Path.Combine(extractDir, "Package.zip"), Path.Combine(extractDir, "Package"));
                 ConsoleLog.Log("Loading latest ipackage");
                 IPackage? latestIPackage;
-                if (!File.Exists(Path.Combine(extractDir, "Package", "Supdate.dll")))
+                if (!File.Exists(Path.Combine(extractDir, "Package", "SupdateIPackage.dll")))
                 {
-                    ConsoleLog.Error("There's no Supdate.dll in the pagage, continuing with old ipackage");
+                    ConsoleLog.Error("There's no SupdateIPackage.dll in the pagage, continuing with old ipackage");
                     latestIPackage = oldIPackage;
                     newIPackagePath = null;
                 }
                 else
                 {
-                    File.Copy(Path.Combine(extractDir, "Package", "Supdate.dll"), Path.Combine(newIPackagePath, "Supdate.dll"));
-                    latestIPackage = PackageLoader.LoadIPackageFromPath(Path.Combine(newIPackagePath, "Supdate.dll"));
+                    File.Copy(Path.Combine(extractDir, "Package", "SupdateIPackage.dll"), Path.Combine(newIPackagePath, "SupdateIPackage.dll"));
+                    latestIPackage = PackageLoader.LoadIPackageFromPath(Path.Combine(newIPackagePath, "SupdateIPackage.dll"));
                     if (latestIPackage == null)
                     {
-                        ConsoleLog.Error("Supdate.dll failed to load, continuing with old ipackage");
+                        ConsoleLog.Error("SupdateIPackage.dll failed to load, continuing with old ipackage");
                         latestIPackage = oldIPackage;
                     }
                 }
                 ConsoleLog.Log("Moving base level files");
-                string basePath = Path.Combine(extractDir, "Base");
-
+                string basePath = Path.Combine(latestIPackage.InstallPath, "NewBase");
+                if (Directory.Exists(basePath))
+                {
+                    Directory.Delete(basePath, true);
+                }
                 Directory.CreateDirectory(basePath);
 
                 foreach (string file in latestIPackage.BaseLevelData)
                 {
                     string actualFilePath = Path.Combine(extractDir, "Package", file);
                     string filename = Path.GetFileName(actualFilePath);
-                    if (actualFilePath.Equals(Path.Combine(extractDir, "Package", "Supdate.dll"), StringComparison.CurrentCultureIgnoreCase))
-                        throw new EndInstallException("The Supdate.dll can't be in the base directory.", UpdateEndCode.InstallFailed);
+                    if (actualFilePath.Equals(Path.Combine(extractDir, "Package", "SupdateIPackage.dll"), StringComparison.CurrentCultureIgnoreCase))
+                        throw new EndInstallException("The SupdateIPackage.dll can't be in the base directory.", UpdateEndCode.InstallFailed);
 
                     File.Move(actualFilePath, Path.Combine(basePath, filename));
                 }
@@ -123,8 +143,12 @@ namespace Supdate
 
                 string installPath = Path.Combine(latestIPackage.InstallPath, latestIPackage.CurrentVersion.ToString());
 
-                Directory.CreateDirectory(installPath);
-                Directory.Move(Path.Combine(extractDir, "oldIPackage"), installPath);
+                if (Directory.Exists(installPath))
+                {
+                    Directory.Delete(installPath, true);
+                }
+
+                Directory.Move(Path.Combine(extractDir, "Package"), installPath);
 
 
 
@@ -133,46 +157,43 @@ namespace Supdate
 
                 if (!oldIPackage.isFirstInstall)
                 {
-                    ConsoleLog.Log("Saving data for cleanup");
-                    File.WriteAllText(Path.Combine(installPath, "SupdateCleanupData.ose"), Automatic.ConvertObjectToRegion((oldPackageLocation, Path.Combine(installPath, "Supdate.dll")), "DataSave").RegionSaveString);
+                    ConsoleLog.Log("Saving data for cleanup and final install");
+                    File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinalise.ose"), Automatic.ConvertObjectToRegion((oldPackageLocation, Path.Combine(installPath, "SupdateIPackage.dll"), basePath), "DataSave").RegionSaveString);
+
                 }
-                Console.WriteLine("Copying base dir files");
-                string installerName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
-                bool containsNewInstaller = false; 
-                foreach (string file in Directory.EnumerateFiles(basePath))
-                {
-                    string fileName = Path.GetFileName(file);
-                    if (fileName.Equals(installerName, StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        containsNewInstaller = true;
-                        continue;
-                    }
-                    if (File.Exists(Path.Combine(latestIPackage.InstallPath, fileName)))
-                        File.Delete(Path.Combine(latestIPackage.InstallPath, fileName));
-                    
+                File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateStartup.ose"), Automatic.ConvertObjectToRegion(Path.Combine(installPath, "SupdateIPackage.dll"), "StartupSave").RegionSaveString);
 
-                    
-                }
+                ConsoleLog.Log("Cleaning up...");
+                tempfileDelete.Add(extractDir);
+                if (newIPackagePath != null) //I don't know how to free the recourses so i cant delete the file.
+                    tempfileDelete.Add(newIPackagePath);
 
+                File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinaliseTempData.ose"), Automatic.ConvertObjectToRegion(tempfileDelete, "TempData").RegionSaveString);
 
-                    ConsoleLog.Log("Cleaning up...");
-                Directory.Delete(extractDir, true);
-                if (newIPackagePath != null)
-                    Directory.Delete(newIPackagePath, true);
                 return UpdateEndCode.UpdateSuccess;
             }
             catch (Exception ex)
             {
+                if (ex is ExitException) throw;
+                if (ex is DoFuncException) throw;
                 ConsoleLog.Log("Cleaning up...");
-                Directory.Delete(extractDir, true);
-                if (newIPackagePath != null)
-                    Directory.Delete(newIPackagePath, true);
+                try
+                {
+                    Directory.Delete(extractDir, true);
 
+                    if (newIPackagePath != null)
+                        Directory.Delete(newIPackagePath, true);
+                }
+                catch
+                {
+                    ConsoleLog.Error("Full cean up failed, please delete files manually.");
+                }
                 ConsoleLog.Fatality(ex.Message);
                 if (ex is EndInstallException endInstallException)
                 {
                     return endInstallException.UpdateEndCode;
                 }
+                
                 return UpdateEndCode.InstallFailed;
             }
 

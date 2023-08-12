@@ -6,40 +6,31 @@ namespace Supdate
     {
         public static readonly List<ArgDefinition> argCommandsDefinitions = new()
         {
-            new("r", "replace arg one with arg two and then start arg 2 with the intend to delete this file", new() {2}, false ),
-            new("d", "delete arg 1", new() {1}, false),
+            new("r", "replace arg one with arg two and then start arg 2 with the intend to delete this file", new() {2}, false, true ),
+            new("d", "delete arg 1", new() {1}, false, true),
+            new("m", "startup normally", new() {0}, false, true),
+            new("s", "Update the IPackage specifyed in the arg 1. Usage: /s \"C:\\Path\\To\\IPackage\\SupdateIPackage.dll\"", new() {1} , false, false),
+            new("?", "Shows this help", new() {0} , false, false),
 
 
         };
-        static void StartProgram(string path)
-        {
-            // Create a new ProcessStartInfo to configure how the process will start
-            ProcessStartInfo startInfo = new ProcessStartInfo
-            {
-                FileName = path,            // The path to the executable
-                UseShellExecute = true,     // Use the shell to execute (allows things like file associations)
-                RedirectStandardOutput = false,
-                RedirectStandardError = false,
-                CreateNoWindow = false      // Whether to create a separate window for the process
-            };
-
-            try
-            {
-                // Start the process
-                Process.Start(startInfo);
-            }
-            catch (Exception ex)
-            {
-                ConsoleLog.Fatality("An error occurred starting a program: " + ex.Message);
-                
-            }
-        }
+        
         public static void InterpretArguments(List<ArgInstance> tokens)
         {
             foreach (ArgInstance token in tokens)
             {
                 switch (token.argDefinition.argName)
                 {
+                    case "m":
+                        Program.Main(new string[] {});
+                        break;
+                    case "?":
+                        ShowHelp(argCommandsDefinitions);
+                        break;
+                    case "s":
+                        
+                        Updater.CheckUpdate(PackageLoader.LoadIPackageFromPath(token.argAttributes[0]), token.argAttributes[0]);
+                        break;
                     case "r":
                         for (int i = 0; i < 10; i++)
                             try
@@ -64,7 +55,7 @@ namespace Supdate
                                 ConsoleLog.Error($"Failed to move because {ex.Message}");
                                 Thread.Sleep(500);
                             }
-                        StartProgram(token.argAttributes[0]);
+                        ProcessStarter.StartProcess(token.argAttributes[0]);
                         break;
                     case "d":
                         for (int i = 0; i < 10; i++)
@@ -80,11 +71,24 @@ namespace Supdate
 
                             }
                         break;
+
                 }
                 token.AlreadyUsed = true;
             }
         }
 
+        public static void ShowHelp(List<ArgDefinition> argDefinitions)
+        {
+            Console.Clear();
+            foreach (ArgDefinition argDef in argDefinitions)
+            {
+                if (argDef.undocumented)
+                    continue;
+                Console.WriteLine($"\t/{argDef.argName}\t{argDef.argDescription}\n");
+            }
+            Console.WriteLine("Press any key to continue");
+            Console.ReadKey();
+        }
 
 
         public static List<ArgInstance> TokeniseArgs(string[] args, List<ArgDefinition> argDefinitions)
@@ -173,14 +177,16 @@ namespace Supdate
         public string argDescription;
         public List<int> argAttributes;
         public readonly bool usableMultibleTimes;
+        public readonly bool undocumented;
 
 
-        public ArgDefinition(string argName, string argDescription, List<int> argAttributes, bool usableMultibleTimes)
+        public ArgDefinition(string argName, string argDescription, List<int> argAttributes, bool usableMultibleTimes, bool undocumented)
         {
             this.usableMultibleTimes = usableMultibleTimes;
             this.argName = argName;
             this.argDescription = argDescription;
             this.argAttributes = argAttributes;
+            this.undocumented = undocumented;
         }
     }
 }
