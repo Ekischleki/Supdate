@@ -33,8 +33,7 @@ namespace Supdate
 
                 if (!PingHost(oldIPackage.LatestVersionDownload))
                 {
-                    ConsoleLog.Error("IPackage server or client is offline.");
-                    return UpdateEndCode.ClientOrServerOffline;
+                    throw new Exception("IPackage server or client is offline.");
                 }
 
                 HttpClient httpClient = new();
@@ -58,10 +57,19 @@ namespace Supdate
                 }
                 return UpdateEndCode.ClientOnLatestVersion;
             }
-            catch (DoFuncException ex)
+            catch (Exception ex)
             {
-                ex.action.Invoke();
-                return UpdateEndCode.ClientOnLatestVersion;
+                Console.WriteLine("Could complete update/install process due to a fatal error: ");
+                ConsoleLog.Fatality(ex.Message);
+                Console.WriteLine("Press any key to continue.");
+
+                Console.ReadKey();
+                if (ex is EndInstallException endInstallException)
+                {
+                    return endInstallException.UpdateEndCode;
+                }
+
+                return UpdateEndCode.InstallFailed;
             }
 
         }
@@ -182,7 +190,11 @@ namespace Supdate
                 {
                     ConsoleLog.Error("Full cean up failed, please delete files manually.");
                 }
+                Console.WriteLine("Could complete update/install process due to a fatal error: ");
                 ConsoleLog.Fatality(ex.Message);
+                Console.WriteLine("Press any key to continue.");
+
+                Console.ReadKey();
                 if (ex is EndInstallException endInstallException)
                 {
                     return endInstallException.UpdateEndCode;
@@ -198,11 +210,13 @@ namespace Supdate
         {
             bool pingable = false;
             Ping? pinger = null;
+            Uri uri = new(nameOrAddress);
+            
 
             try
             {
                 pinger = new Ping();
-                PingReply reply = pinger.Send(nameOrAddress);
+                PingReply reply = pinger.Send(uri.Host);
                 pingable = reply.Status == IPStatus.Success;
             }
             catch (PingException)

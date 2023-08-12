@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
+using System.Diagnostics;
 
 namespace Supdate
 {
@@ -63,14 +64,15 @@ namespace Supdate
 
                 foreach (string file in Directory.EnumerateFiles(saveObject.Item1))
                 {
-                    if (file.Equals(Path.GetFileName(Assembly.GetExecutingAssembly().Location), StringComparison.CurrentCultureIgnoreCase))
+                    Console.WriteLine(Process.GetCurrentProcess().MainModule.FileName);
+                    if (Path.GetFileName(file).Equals(Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName), StringComparison.CurrentCultureIgnoreCase))
                     {
                         updatingSupdate = true;
                         continue;
                     }
-                    if (File.Exists(Path.Combine(newIPackage.InstallPath, file)))
-                        File.Delete(Path.Combine(newIPackage.InstallPath, file));
-                    File.Move(Path.Combine(saveObject.Item1, file), Path.Combine(newIPackage.InstallPath, file));
+                    if (File.Exists(Path.Combine(newIPackage.InstallPath, Path.GetFileName(file))))
+                        File.Delete(Path.Combine(newIPackage.InstallPath, Path.GetFileName(file)));
+                    File.Move(file, Path.Combine(newIPackage.InstallPath, Path.GetFileName(file)));
 
                 }
 
@@ -78,8 +80,9 @@ namespace Supdate
             if (updatingSupdate)
             {
                 string tempExe = Updater.CreateTempDir();
-                File.Copy(Assembly.GetExecutingAssembly().Location, tempExe, true);
-                ProcessStarter.StartProcess(tempExe, $"/r \"{Path.Combine(saveObject.Item1, Path.GetFileName(Assembly.GetExecutingAssembly().Location))}\" \"{Path.Combine(newIPackage.InstallPath, Path.GetFileName(Assembly.GetExecutingAssembly().Location))}\"");
+                
+                File.Copy(Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName), Path.Combine(tempExe, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName)), true);
+                ProcessStarter.StartProcess(tempExe, $"/r \"{Path.Combine(saveObject.Item1, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName))}\" \"{Path.Combine(newIPackage.InstallPath, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName))}\"");
                 throw new ExitException();
             }
         }
