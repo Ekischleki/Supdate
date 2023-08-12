@@ -21,16 +21,10 @@ namespace Supdate
                 CreateNoWindow = false      // Whether to create a separate window for the process
             };
 
-            try
-            {
+
                 // Start the process
                 Process.Start(startInfo);
-            }
-            catch (Exception ex)
-            {
-                ConsoleLog.Fatality("An error occurred starting a program: " + ex.Message);
 
-            }
         }
     }
 }

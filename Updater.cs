@@ -1,5 +1,6 @@
 ﻿using ObjectStoreE;
 using System.IO.Compression;
+using System.Net;
 using System.Net.NetworkInformation;
 
 namespace Supdate
@@ -161,7 +162,7 @@ namespace Supdate
                     File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinalise.ose"), Automatic.ConvertObjectToRegion((oldPackageLocation, Path.Combine(installPath, "SupdateIPackage.dll"), basePath), "DataSave").RegionSaveString);
 
                 }
-                File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateStartup.ose"), Automatic.ConvertObjectToRegion(Path.Combine(installPath, "SupdateIPackage.dll"), "StartupSave").RegionSaveString);
+                File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateStartup.ose"), Automatic.ConvertObjectToRegion((Path.Combine(installPath, "SupdateIPackage.dll"), installPath), "StartupSave").RegionSaveString);
 
                 ConsoleLog.Log("Cleaning up...");
                 tempfileDelete.Add(extractDir);

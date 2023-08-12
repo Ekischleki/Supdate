@@ -19,6 +19,7 @@
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine($"[{DateTime.Now}]: {message}");
             Console.ResetColor();
+            Console.ReadKey();
         }
         public static void Fatality(object message)
         {

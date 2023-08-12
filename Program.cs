@@ -10,7 +10,9 @@ namespace Supdate
         {
             try
             {
-                string baseLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string baseLocation = AppContext.BaseDirectory;
+                ConsoleLog.Log($"Base location: {baseLocation}");
+                ConsoleLog.Log($"Assembly location: {Assembly.GetExecutingAssembly().Location}");
                 if (args.Length == 0) // Startup mode
                 {
                     if (File.Exists(Path.Combine(baseLocation, "SupdateInstallFinalise.ose")))
@@ -27,10 +29,19 @@ namespace Supdate
 
                     if (File.Exists(Path.Combine(baseLocation, "SupdateStartup.ose")))
                     {
-                        string startup = (string)Automatic.ConvertRegionToObject(Region.CreateSingleRegionByPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "SupdateStartup.ose")));
-                        IPackage startupPackage = PackageLoader.LoadIPackageFromPath(startup) ?? throw new Exception("Couldn't load startup Ipackage");
-                        startupPackage.StartInstance(baseLocation);
-                        return;
+                        try
+                        {
+                            var startup = ((string, string))Automatic.ConvertRegionToObject(Region.CreateSingleRegionByPath(Path.Combine(baseLocation, "SupdateStartup.ose")));
+                            IPackage startupPackage = PackageLoader.LoadIPackageFromPath(startup.Item1) ?? throw new Exception("Couldn't load startup Ipackage");
+                            startupPackage.StartInstance(startup.Item2);
+                            return;
+                        } catch (Exception ex)
+                        {
+                            Console.WriteLine("Failed starting because of fatality.");
+                            ConsoleLog.Fatality(ex);
+                            Console.ReadKey();
+                            return;
+                        }
                     }
 
                 }
