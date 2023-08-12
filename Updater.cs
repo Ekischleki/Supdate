@@ -29,17 +29,9 @@ namespace Supdate
             try
             {
 
-                if (oldIPackage.CurrentVersion.AlwaysUpdate)
-                {
-                    return Update(oldIPackage, oldIPackageLocation);
-                }
+
 
                 if (!PingHost(oldIPackage.LatestVersionDownload))
-                {
-                    ConsoleLog.Error("IPackage server or client is offline.");
-                    return UpdateEndCode.ClientOrServerOffline;
-                }
-                if (!PingHost(oldIPackage.LatestPackageDownload))
                 {
                     ConsoleLog.Error("IPackage server or client is offline.");
                     return UpdateEndCode.ClientOrServerOffline;
@@ -53,12 +45,12 @@ namespace Supdate
                 if (latestVersionString == null)
                 {
                     ConsoleLog.Warn("The latest version returned null - assuming there's an update");
-                    return Update(oldIPackage, oldIPackageLocation);
+                    return Update(oldIPackage, oldIPackageLocation, null);
                 }
                 Version latestVersion = new(latestVersionString);
                 if ((latestVersion > oldIPackage.CurrentVersion) ?? true)
                 {
-                    return Update(oldIPackage, oldIPackageLocation);
+                    return Update(oldIPackage, oldIPackageLocation, latestVersion);
                 }
                 if ((latestVersion < oldIPackage.CurrentVersion) ?? throw new Exception("Always update check has alreay been done"))
                 {
@@ -84,7 +76,7 @@ namespace Supdate
             Directory.CreateDirectory(randomPath);
             return randomPath;
         }
-        public static UpdateEndCode Update(IPackage oldIPackage, string oldPackageLocation, HttpClient httpClient = null)
+        public static UpdateEndCode Update(IPackage oldIPackage, string oldPackageLocation, Version latestPackageVersion, HttpClient httpClient = null)
         {
             List<string> tempfileDelete = new();
             if (httpClient == null)
@@ -98,7 +90,7 @@ namespace Supdate
             try
             {
                 ConsoleLog.Log("Downloading latest package");
-                byte[] latestPackageBinary = httpClient.GetByteArrayAsync(oldIPackage.LatestPackageDownload).Result;
+                byte[] latestPackageBinary = httpClient.GetByteArrayAsync(oldIPackage.LatestPackageDownload(latestPackageVersion)).Result;
                 //There are no methods for extracting from a byte array directly
                 ConsoleLog.Log("Extracting latest package");
                 File.WriteAllBytes(Path.Combine(extractDir, "Package.zip"), latestPackageBinary);
@@ -159,10 +151,11 @@ namespace Supdate
                 if (!oldIPackage.isFirstInstall)
                 {
                     ConsoleLog.Log("Saving data for cleanup and final install");
-                    File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinalise.ose"), Automatic.ConvertObjectToRegion((oldPackageLocation, Path.Combine(installPath, "SupdateIPackage.dll"), basePath), "DataSave").RegionSaveString);
+                    File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallCleanup.ose"), Automatic.ConvertObjectToRegion(oldPackageLocation, "DataSave").RegionSaveString);
 
                 }
                 File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateStartup.ose"), Automatic.ConvertObjectToRegion((Path.Combine(installPath, "SupdateIPackage.dll"), installPath), "StartupSave").RegionSaveString);
+                File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinalise.ose"), Automatic.ConvertObjectToRegion((basePath, Path.Combine(installPath, "SupdateIPackage.dll")), "Base").RegionSaveString);
 
                 ConsoleLog.Log("Cleaning up...");
                 tempfileDelete.Add(extractDir);

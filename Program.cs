@@ -15,15 +15,21 @@ namespace Supdate
                 ConsoleLog.Log($"Assembly location: {Assembly.GetExecutingAssembly().Location}");
                 if (args.Length == 0) // Startup mode
                 {
-                    if (File.Exists(Path.Combine(baseLocation, "SupdateInstallFinalise.ose")))
+                    if (File.Exists(Path.Combine(baseLocation, "SupdateInstallCleanup.ose")))
                     {
-                        CleanupManager.FinaliseInstall(Path.Combine(baseLocation, "SupdateInstallFinalise.ose"));
-                        File.Delete(Path.Combine(baseLocation, "SupdateInstallFinalise.ose"));
+                        CleanupManager.CleanupInstall(Path.Combine(baseLocation, "SupdateInstallCleanup.ose"));
+                        File.Delete(Path.Combine(baseLocation, "SupdateInstallCleanup.ose"));
                     }
                     if (File.Exists(Path.Combine(baseLocation, "SupdateInstallFinaliseTempData.ose")))
                     {
                         CleanupManager.ClearTempData(Path.Combine(baseLocation, "SupdateInstallFinaliseTempData.ose"));
                         File.Delete(Path.Combine(baseLocation, "SupdateInstallFinaliseTempData.ose"));
+
+                    }
+                    if (File.Exists(Path.Combine(baseLocation, "SupdateInstallFinalise.ose")))
+                    {
+                        CleanupManager.FinaliseInstall(Path.Combine(baseLocation, "SupdateInstallFinalise.ose"));
+                        File.Delete(Path.Combine(baseLocation, "SupdateInstallFinalise.ose"));
 
                     }
 

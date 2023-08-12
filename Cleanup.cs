@@ -26,31 +26,42 @@ namespace Supdate
             }
         }
 
-        public static void FinaliseInstall(string cleanupSave)
+        public static void CleanupInstall(string cleanupSave)
         {
             //oldPackageLocation newPackageLocation basePath
 
             ConsoleLog.Log("Loading cleanup object");
-            var cleanupObject = ((string, string, string, string))Automatic.ConvertRegionToObject(Region.CreateSingleRegionByPath(cleanupSave));
+            var cleanupObject = (string)Automatic.ConvertRegionToObject(Region.CreateSingleRegionByPath(cleanupSave));
             ConsoleLog.Log("Loading old package");
-            IPackage oldIPackage = PackageLoader.LoadIPackageFromPath(cleanupObject.Item1) ?? throw new Exception("Can't complete cleanup");
-            IPackage newIPackage = PackageLoader.LoadIPackageFromPath(cleanupObject.Item2) ?? throw new Exception("Can't complete cleanup");
+            IPackage oldIPackage = PackageLoader.LoadIPackageFromPath(cleanupObject) ?? throw new Exception("Can't complete cleanup");
             ConsoleLog.Log("Checking if old script is still running");
-            if (IsActiveFileLock(oldIPackage.InstanceLockPath(Path.GetDirectoryName(cleanupObject.Item1))))
+            if (IsActiveFileLock(oldIPackage.InstanceLockPath(Path.GetDirectoryName(cleanupObject))))
                 throw new Exception("Can't complete cleanup due to old instance still running.");
             ConsoleLog.Log("Beginning cleanup");
             ConsoleLog.Log("Running cleanup script on old IPackage");
-            oldIPackage.Cleanup(Path.GetDirectoryName(cleanupObject.Item1));
+            oldIPackage.Cleanup(Path.GetDirectoryName(cleanupObject));
 
             ConsoleLog.Log("Deleting old package");
-            Directory.Delete(Path.GetDirectoryName(cleanupObject.Item1), true);
+            Directory.Delete(Path.GetDirectoryName(cleanupObject), true);
             
+            
+            return;
+
+        }
+
+        public static void FinaliseInstall(string save)
+        {
+            var saveObject = ((string, string))Automatic.ConvertRegionToObject(Region.CreateSingleRegionByPath(save));
+            ConsoleLog.Log("Loading new package");
+
+            IPackage newIPackage = PackageLoader.LoadIPackageFromPath(saveObject.Item2) ?? throw new Exception("Can't complete cleanup");
+
             ConsoleLog.Log("Copying base files");
             bool updatingSupdate = false;
-            if (Directory.Exists(cleanupObject.Item3))
+            if (Directory.Exists(saveObject.Item1))
             {
-                
-                foreach(string file in Directory.EnumerateFiles(cleanupObject.Item3))
+
+                foreach (string file in Directory.EnumerateFiles(saveObject.Item1))
                 {
                     if (file.Equals(Path.GetFileName(Assembly.GetExecutingAssembly().Location), StringComparison.CurrentCultureIgnoreCase))
                     {
@@ -59,20 +70,18 @@ namespace Supdate
                     }
                     if (File.Exists(Path.Combine(newIPackage.InstallPath, file)))
                         File.Delete(Path.Combine(newIPackage.InstallPath, file));
-                    File.Move(Path.Combine(cleanupObject.Item3, file), Path.Combine(newIPackage.InstallPath, file));
+                    File.Move(Path.Combine(saveObject.Item1, file), Path.Combine(newIPackage.InstallPath, file));
 
                 }
-                
+
             }
             if (updatingSupdate)
             {
                 string tempExe = Updater.CreateTempDir();
                 File.Copy(Assembly.GetExecutingAssembly().Location, tempExe, true);
-                ProcessStarter.StartProcess(tempExe, $"/r \"{Path.Combine(cleanupObject.Item3,Path.GetFileName(Assembly.GetExecutingAssembly().Location))}\" \"{Path.Combine(newIPackage.InstallPath, Path.GetFileName(Assembly.GetExecutingAssembly().Location))}\"");
+                ProcessStarter.StartProcess(tempExe, $"/r \"{Path.Combine(saveObject.Item1, Path.GetFileName(Assembly.GetExecutingAssembly().Location))}\" \"{Path.Combine(newIPackage.InstallPath, Path.GetFileName(Assembly.GetExecutingAssembly().Location))}\"");
                 throw new ExitException();
             }
-            return;
-
         }
 
         public static bool IsActiveFileLock(string fileName)

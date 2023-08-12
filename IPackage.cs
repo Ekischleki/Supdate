@@ -25,9 +25,13 @@
         /// </summary>
         string LatestVersionDownload { get; }
         /// <summary>
-        /// The download link to the lastest package
+        /// This method should retourn the download link to the latest package
+        /// 
         /// </summary>
-        string LatestPackageDownload { get; }
+        /// <param name="latestFoundVersion">If your download link is based on the latest version you can use this to get a Link based on the version 
+        /// Use .tostring to convert it into a string representation of the version</param>
+        /// <returns></returns>
+        string LatestPackageDownload(Version? latestFoundVersion); 
 
 
         /// <summary>
