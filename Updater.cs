@@ -131,7 +131,7 @@ namespace Supdate
                     }
                 }
                 if (!oldIPackage.isFirstInstall && Path.Combine(latestIPackage.InstallPath, latestIPackage.CurrentVersion.ToString()) == Path.Combine(oldIPackage.InstallPath, oldIPackage.CurrentVersion.ToString()))
-                    throw new Exception($"Old IPackage install path is the same as latest IPackage install path. If you're a dev, try to update the version or seek further help.");
+                    throw new Exception($"Old IPackage install path is the same as latest IPackage install path. In order to not break anything, each version has to be unique. If you're a dev, try to update the version or seek further help.");
                 ConsoleLog.Log("Moving base level files");
                 string basePath = Path.Combine(latestIPackage.InstallPath, "NewBase");
                 if (Directory.Exists(basePath))
@@ -171,6 +171,9 @@ namespace Supdate
                     ConsoleLog.Log("Saving data for cleanup and final install");
                     File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallCleanup.ose"), Automatic.ConvertObjectToRegion(oldPackageLocation, "DataSave").RegionSaveString);
 
+                } else
+                {
+                    ConsoleLog.Log("Skipping cleanup due to first install");
                 }
                 File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateStartup.ose"), Automatic.ConvertObjectToRegion((Path.Combine(installPath, "SupdateIPackage.dll"), installPath), "StartupSave").RegionSaveString);
                 File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinalise.ose"), Automatic.ConvertObjectToRegion((basePath, Path.Combine(installPath, "SupdateIPackage.dll")), "Base").RegionSaveString);

@@ -65,7 +65,7 @@ namespace Supdate
                 foreach (string file in Directory.EnumerateFiles(saveObject.Item1))
                 {
                     Console.WriteLine(Process.GetCurrentProcess().MainModule.FileName);
-                    if (Path.GetFileName(file).Equals(Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName), StringComparison.CurrentCultureIgnoreCase))
+                    if (Path.Combine(newIPackage.InstallPath, Path.GetFileName(file)).Equals(Process.GetCurrentProcess().MainModule.FileName, StringComparison.CurrentCultureIgnoreCase))
                     {
                         ConsoleLog.Log("Found installer update");
 

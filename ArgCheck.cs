@@ -56,7 +56,8 @@ namespace Supdate
                                 ConsoleLog.Error($"Failed to move because {ex.Message}");
                                 Thread.Sleep(500);
                             }
-                        ProcessStarter.StartProcess(token.argAttributes[0]);
+                        ConsoleLog.Log($"Starting original updated Supdate at \"{token.argAttributes[1]}\"");
+                        ProcessStarter.StartProcess(token.argAttributes[1], $"/d \"{Process.GetCurrentProcess().MainModule.FileName}\"");
                         break;
                     case "d":
                         for (int i = 0; i < 10; i++)
