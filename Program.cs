@@ -8,6 +8,11 @@ namespace Supdate
 
         public static void Main(string[] args)
         {
+            foreach (string arg in args)
+            {
+                ConsoleLog.Log(arg);
+            }
+
             try
             {
                 string baseLocation = AppContext.BaseDirectory;
@@ -41,7 +46,8 @@ namespace Supdate
                             IPackage startupPackage = PackageLoader.LoadIPackageFromPath(startup.Item1) ?? throw new Exception("Couldn't load startup Ipackage");
                             startupPackage.StartInstance(startup.Item2);
                             return;
-                        } catch (Exception ex)
+                        }
+                        catch (Exception ex)
                         {
                             Console.WriteLine("Failed starting because of fatality.");
                             ConsoleLog.Fatality(ex);
@@ -51,12 +57,16 @@ namespace Supdate
                     }
 
                 }
-
+                ConsoleLog.Log("Interpreting arguments");
                 ArgCheck.InterpretArguments(ArgCheck.TokeniseArgs(args, ArgCheck.argCommandsDefinitions));
             }
-            catch (ExitException)
+            catch (Exception ex)
             {
-                return;
+                Console.WriteLine("Could complete update/install process due to a fatal error: ");
+                ConsoleLog.Fatality(ex.Message);
+                Console.WriteLine("Press any key to continue.");
+
+                Console.ReadKey();
             }
             return;
         }

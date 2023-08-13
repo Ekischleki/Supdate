@@ -85,7 +85,8 @@ namespace Supdate
                 
                 File.Copy(Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName), Path.Combine(tempExe, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName)), true);
                 ProcessStarter.StartProcess(Path.Combine(tempExe, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName)), $"/r \"{Path.Combine(saveObject.Item1, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName))}\" \"{Process.GetCurrentProcess().MainModule.FileName}\""); //Copys to new base for some reason good night tho
-                throw new ExitException();
+                Environment.Exit(0);
+                return;
             }
         }
 

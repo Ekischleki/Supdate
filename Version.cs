@@ -95,6 +95,9 @@ namespace Supdate
         }
         public override string ToString()
         {
+            if (subversions == null)
+                return "AlwaysUpdate";
+
             StringBuilder result = new();
             for (int i = 0; i < subversions.Count; i++)
             {

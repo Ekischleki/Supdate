@@ -2,6 +2,7 @@
 using System.IO.Compression;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Text;
 
 namespace Supdate
 {
@@ -40,13 +41,18 @@ namespace Supdate
 
 
 
-                var latestVersionString = httpClient.GetStringAsync(oldIPackage.LatestVersionDownload).Result;
+                var latestVersionString = Encoding.UTF8.GetString(httpClient.GetByteArrayAsync(oldIPackage.LatestVersionDownload).Result);
                 if (latestVersionString == null)
                 {
                     ConsoleLog.Warn("The latest version returned null - assuming there's an update");
                     return Update(oldIPackage, oldIPackageLocation, null);
                 }
+
+
                 Version latestVersion = new(latestVersionString);
+
+                ConsoleLog.Log($"Latest version: {latestVersion.ToString()}");
+                ConsoleLog.Log($"Current version: {oldIPackage.CurrentVersion.ToString()}");
                 if ((latestVersion > oldIPackage.CurrentVersion) ?? true)
                 {
                     return Update(oldIPackage, oldIPackageLocation, latestVersion);
@@ -55,6 +61,7 @@ namespace Supdate
                 {
                     ConsoleLog.Warn("Current version is newer than latest oldIPackage. If this is a dev version, that's ok.");
                 }
+                
                 return UpdateEndCode.ClientOnLatestVersion;
             }
             catch (Exception ex)
@@ -102,6 +109,7 @@ namespace Supdate
                 //There are no methods for extracting from a byte array directly
                 ConsoleLog.Log("Extracting latest package");
                 File.WriteAllBytes(Path.Combine(extractDir, "Package.zip"), latestPackageBinary);
+                latestPackageBinary = null;
                 Directory.CreateDirectory(Path.Combine(extractDir, "Package"));
                 ZipFile.ExtractToDirectory(Path.Combine(extractDir, "Package.zip"), Path.Combine(extractDir, "Package"));
                 ConsoleLog.Log("Loading latest ipackage");
@@ -122,6 +130,8 @@ namespace Supdate
                         latestIPackage = oldIPackage;
                     }
                 }
+                if (!oldIPackage.isFirstInstall && Path.Combine(latestIPackage.InstallPath, latestIPackage.CurrentVersion.ToString()) == Path.Combine(oldIPackage.InstallPath, oldIPackage.CurrentVersion.ToString()))
+                    throw new Exception($"Old IPackage install path is the same as latest IPackage install path. If you're a dev, try to update the version or seek further help.");
                 ConsoleLog.Log("Moving base level files");
                 string basePath = Path.Combine(latestIPackage.InstallPath, "NewBase");
                 if (Directory.Exists(basePath))
@@ -172,7 +182,7 @@ namespace Supdate
 
                 File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinaliseTempData.ose"), Automatic.ConvertObjectToRegion(tempfileDelete, "TempData").RegionSaveString);
 
-                if (oldIPackage.isFirstInstall)
+                if (latestIPackage.isFirstInstall)
                 {
                     ConsoleLog.Log("Because first install, finalising install now.");
                     CleanupManager.FinaliseInstall(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinalise.ose"));

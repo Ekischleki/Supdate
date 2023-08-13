@@ -29,14 +29,15 @@ namespace Supdate
                         break;
                     case "s":
                         
-                        Updater.CheckUpdate(PackageLoader.LoadIPackageFromPath(token.argAttributes[0]), token.argAttributes[0]);
+                        ConsoleLog.Log( Updater.CheckUpdate(PackageLoader.LoadIPackageFromPath(token.argAttributes[0]), token.argAttributes[0]));
                         break;
                     case "r":
                         for (int i = 0; i < 10; i++)
                             try
                             {
-                                ConsoleLog.Log($"Trying to delete arg 1 try {i} of 10");
-                                File.Delete(token.argAttributes[0]);
+                                ConsoleLog.Log($"Trying to delete \"{token.argAttributes[1]}\" try {i} of 10");
+                                File.Delete(token.argAttributes[1]);
+                                break;
                             } catch(Exception ex)
                             {
                                 ConsoleLog.Error($"Failed to delete arg 1 because {ex.Message}");
@@ -46,9 +47,9 @@ namespace Supdate
                         for (int i = 0; i < 10; i++)
                             try
                             {
-                                ConsoleLog.Log($"Trying to move arg 2 to arg 1 try {i} of 10");
-                                File.Move(token.argAttributes[1], token.argAttributes[0]);
-
+                                ConsoleLog.Log($"Trying to move arg {token.argAttributes[0]} to {token.argAttributes[1]} try {i} of 10");
+                                File.Move(token.argAttributes[0], token.argAttributes[1]);
+                                break;
                             }
                             catch (Exception ex)
                             {
