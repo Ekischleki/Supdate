@@ -67,6 +67,8 @@ namespace Supdate
                     Console.WriteLine(Process.GetCurrentProcess().MainModule.FileName);
                     if (Path.GetFileName(file).Equals(Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName), StringComparison.CurrentCultureIgnoreCase))
                     {
+                        ConsoleLog.Log("Found installer update");
+
                         updatingSupdate = true;
                         continue;
                     }
@@ -82,7 +84,7 @@ namespace Supdate
                 string tempExe = Updater.CreateTempDir();
                 
                 File.Copy(Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName), Path.Combine(tempExe, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName)), true);
-                ProcessStarter.StartProcess(tempExe, $"/r \"{Path.Combine(saveObject.Item1, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName))}\" \"{Path.Combine(newIPackage.InstallPath, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName))}\"");
+                ProcessStarter.StartProcess(Path.Combine(tempExe, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName)), $"/r \"{Path.Combine(saveObject.Item1, Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName))}\" \"{Process.GetCurrentProcess().MainModule.FileName}\""); //Copys to new base for some reason good night tho
                 throw new ExitException();
             }
         }

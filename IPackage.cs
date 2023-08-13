@@ -79,5 +79,7 @@
         /// </summary>
         /// <param name="versionPath"></param>
         void StartInstance(string versionPath);
+
+
     }
 }

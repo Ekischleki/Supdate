@@ -172,6 +172,14 @@ namespace Supdate
 
                 File.WriteAllText(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinaliseTempData.ose"), Automatic.ConvertObjectToRegion(tempfileDelete, "TempData").RegionSaveString);
 
+                if (oldIPackage.isFirstInstall)
+                {
+                    ConsoleLog.Log("Because first install, finalising install now.");
+                    CleanupManager.FinaliseInstall(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinalise.ose"));
+                    File.Delete(Path.Combine(latestIPackage.InstallPath, "SupdateInstallFinalise.ose")); 
+
+                }
+
                 return UpdateEndCode.UpdateSuccess;
             }
             catch (Exception ex)
