@@ -15,7 +15,7 @@ namespace Supdate
         public static void ClearTempData(string cleanupSave)
         {
             ConsoleLog.Log("Loading cleanup object");
-            var cleanupObject = (List<string>)Automatic.ConvertRegionToObject(Region.CreateSingleRegionByPath(cleanupSave));
+            var cleanupObject =Automatic.ConvertRegionToObject<List<string>>(Region.CreateSingleRegionByPath(cleanupSave));
             ConsoleLog.Log("Deleting files");
 
             foreach (string path in cleanupObject)
@@ -32,7 +32,7 @@ namespace Supdate
             //oldPackageLocation newPackageLocation basePath
 
             ConsoleLog.Log("Loading cleanup object");
-            var cleanupObject = (string)Automatic.ConvertRegionToObject(Region.CreateSingleRegionByPath(cleanupSave));
+            var cleanupObject = Automatic.ConvertRegionToObject<string>(Region.CreateSingleRegionByPath(cleanupSave));
             ConsoleLog.Log("Loading old package");
             IPackage oldIPackage = PackageLoader.LoadIPackageFromPath(cleanupObject) ?? throw new Exception("Can't complete cleanup");
             ConsoleLog.Log("Checking if old script is still running");
@@ -52,7 +52,7 @@ namespace Supdate
 
         public static void FinaliseInstall(string save)
         {
-            var saveObject = ((string, string))Automatic.ConvertRegionToObject(Region.CreateSingleRegionByPath(save));
+            var saveObject = Automatic.ConvertRegionToObject<(string, string)>(Region.CreateSingleRegionByPath(save));
             ConsoleLog.Log("Loading new package");
 
             IPackage newIPackage = PackageLoader.LoadIPackageFromPath(saveObject.Item2) ?? throw new Exception("Can't complete cleanup");

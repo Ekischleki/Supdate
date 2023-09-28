@@ -42,7 +42,7 @@ namespace Supdate
                     {
                         try
                         {
-                            var startup = ((string, string))Automatic.ConvertRegionToObject(Region.CreateSingleRegionByPath(Path.Combine(baseLocation, "SupdateStartup.ose")));
+                            var startup = Automatic.ConvertRegionToObject<(string, string)>(Region.CreateSingleRegionByPath(Path.Combine(baseLocation, "SupdateStartup.ose")));
                             IPackage startupPackage = PackageLoader.LoadIPackageFromPath(startup.Item1) ?? throw new Exception("Couldn't load startup Ipackage");
                             startupPackage.StartInstance(startup.Item2);
                             return;

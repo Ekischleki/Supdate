@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Supdate": {
+      "commandName": "Project",
+      "commandLineArgs": "/s \"C:\\Users\\ewolf\\AppData\\Roaming\\InstallerTest\\1.0.1\\SupdateInterface.dll\""
+    }
+  }
+}

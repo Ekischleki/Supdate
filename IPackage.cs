@@ -13,10 +13,6 @@
         /// </summary>
         string InstallPath { get; }
         /// <summary>
-        /// The Supdate API version this was written for
-        /// </summary>
-        int SupportedAPIVersion { get; }
-        /// <summary>
         /// The current package version
         /// </summary>
         Version CurrentVersion { get; }
